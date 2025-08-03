@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">JARVIS Assistant</string>
+    
+    <!-- Main Activity -->
+    <string name="jarvis_inactive">JARVIS is inactive</string>
+    <string name="jarvis_active">JARVIS is now active. Say \'Arise\' to wake up.</string>
+    <string name="activate_jarvis">Activate JARVIS</string>
+    <string name="deactivate_jarvis">Deactivate JARVIS</string>
+    <string name="ready">Ready</string>
+    <string name="listening">Listening...</string>
+    <string name="settings">Settings</string>
+    <string name="analytics">Analytics</string>
+    <string name="voice_training">Voice Training</string>
+    <string name="home">Home</string>
+    <string name="commands">Commands</string>
+    <string name="history">History</string>
+    <string name="profile">Profile</string>
+    
+    <!-- Voice Commands -->
+    <string name="wake_word">arise</string>
+    <string name="sleep_command">go to sleep</string>
+    <string name="exit_command">finally sleep</string>
+    <string name="time_command">the time</string>
+    <string name="weather_command">weather</string>
+    <string name="google_command">google</string>
+    <string name="youtube_command">youtube</string>
+    <string name="news_command">news</string>
+    <string name="calculate_command">calculate</string>
+    <string name="focus_mode_command">focus mode</string>
+    <string name="show_focus_command">show my focus</string>
+    <string name="translate_command">translate</string>
+    <string name="whatsapp_command">whatsapp</string>
+    <string name="play_game_command">play a game</string>
+    <string name="screenshot_command">screenshot</string>
+    <string name="take_photo_command">click my photo</string>
+    <string name="volume_up_command">volume up</string>
+    <string name="volume_down_command">volume down</string>
+    <string name="open_app_command">open</string>
+    <string name="close_app_command">close</string>
+    <string name="github_repo_command">create github repository</string>
+    <string name="internet_speed_command">internet speed</string>
+    <string name="ipl_score_command">ipl score</string>
+    
+    <!-- Voice Responses -->
+    <string name="hello_jarvis">Hello! I\'m JARVIS. How can I help you today?</string>
+    <string name="going_to_sleep">Going to sleep mode.</string>
+    <string name="goodbye_jarvis">Goodbye! JARVIS signing off.</string>
+    <string name="current_time">The current time is %1$s</string>
+    <string name="weather_in_location">Weather in %1$s: %2$s, Temperature: %3$s°C</string>
+    <string name="searching_google">Searching Google for %1$s</string>
+    <string name="searching_youtube">Searching YouTube for %1$s</string>
+    <string name="latest_news">Latest news: %1$s</string>
+    <string name="calculation_result">The result is %1$s</string>
+    <string name="calculation_error">Sorry, I couldn\'t calculate that expression</string>
+    <string name="entering_focus_mode">Entering focus mode. I\'ll minimize distractions for you.</string>
+    <string name="focus_analytics">Your focus analytics: Total focus time %1$s minutes, Sessions: %2$s</string>
+    <string name="translation_result">Translation: %1$s</string>
+    <string name="whatsapp_sent">WhatsApp message sent successfully</string>
+    <string name="whatsapp_failed">Failed to send WhatsApp message</string>
+    <string name="game_result">Game result: %1$s</string>
+    <string name="screenshot_captured">Screenshot captured successfully</string>
+    <string name="screenshot_failed">Failed to capture screenshot</string>
+    <string name="photo_captured">Photo captured successfully</string>
+    <string name="photo_failed">Failed to capture photo</string>
+    <string name="volume_increased">Volume increased</string>
+    <string name="volume_decreased">Volume decreased</string>
+    <string name="opening_app">Opening %1$s</string>
+    <string name="app_not_found">Could not find or open %1$s</string>
+    <string name="closing_app">Closing %1$s</string>
+    <string name="app_close_failed">Could not close %1$s</string>
+    <string name="github_repo_created">GitHub repository %1$s created successfully</string>
+    <string name="github_repo_failed">Failed to create GitHub repository</string>
+    <string name="internet_speed_result">Internet speed: Download %1$s Mbps, Upload %2$s Mbps</string>
+    <string name="ipl_score_result">IPL Score: %1$s %2$s vs %3$s %4$s</string>
+    
+    <!-- Error Messages -->
+    <string name="voice_recognition_error">Voice recognition error. Please try again.</string>
+    <string name="no_match_error">I didn\'t catch that. Please try again.</string>
+    <string name="speech_timeout_error">Speech timeout. Please try again.</string>
+    <string name="command_not_understood">I didn\'t understand that command. Please try again.</string>
+    <string name="permission_required">Permission required for this feature</string>
+    <string name="network_error">Network error. Please check your connection.</string>
+    <string name="service_unavailable">Service temporarily unavailable</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="voice_settings">Voice Settings</string>
+    <string name="speech_rate">Speech Rate</string>
+    <string name="voice_pitch">Voice Pitch</string>
+    <string name="wake_word_settings">Wake Word</string>
+    <string name="language_settings">Language</string>
+    <string name="security_settings">Security</string>
+    <string name="password_settings">Password</string>
+    <string name="biometric_settings">Biometric Authentication</string>
+    <string name="voice_biometrics">Voice Biometrics</string>
+    <string name="api_settings">API Settings</string>
+    <string name="github_token">GitHub Token</string>
+    <string name="weather_api_key">Weather API Key</string>
+    <string name="news_api_key">News API Key</string>
+    <string name="ai_api_key">AI API Key</string>
+    <string name="notification_settings">Notifications</string>
+    <string name="sound_notifications">Sound Notifications</string>
+    <string name="vibration_notifications">Vibration Notifications</string>
+    <string name="focus_mode_settings">Focus Mode</string>
+    <string name="focus_duration">Focus Duration</string>
+    <string name="focus_breaks">Focus Breaks</string>
+    <string name="smart_home_settings">Smart Home</string>
+    <string name="device_discovery">Device Discovery</string>
+    <string name="device_control">Device Control</string>
+    <string name="about_settings">About</string>
+    <string name="version_info">Version Information</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_of_service">Terms of Service</string>
+    
+    <!-- Analytics -->
+    <string name="analytics_title">Analytics</string>
+    <string name="voice_commands">Voice Commands</string>
+    <string name="command_history">Command History</string>
+    <string name="usage_statistics">Usage Statistics</string>
+    <string name="focus_sessions">Focus Sessions</string>
+    <string name="productivity_metrics">Productivity Metrics</string>
+    <string name="daily_usage">Daily Usage</string>
+    <string name="weekly_usage">Weekly Usage</string>
+    <string name="monthly_usage">Monthly Usage</string>
+    <string name="total_commands">Total Commands</string>
+    <string name="successful_commands">Successful Commands</string>
+    <string name="failed_commands">Failed Commands</string>
+    <string name="accuracy_rate">Accuracy Rate</string>
+    <string name="average_response_time">Average Response Time</string>
+    
+    <!-- Voice Training -->
+    <string name="voice_training_title">Voice Training</string>
+    <string name="enroll_voice">Enroll Voice</string>
+    <string name="verify_voice">Verify Voice</string>
+    <string name="voice_profile">Voice Profile</string>
+    <string name="training_instructions">Please speak clearly and naturally</string>
+    <string name="training_phrase_1">Say: "Hello JARVIS"</string>
+    <string name="training_phrase_2">Say: "What's the weather today?"</string>
+    <string name="training_phrase_3">Say: "Set a timer for 5 minutes"</string>
+    <string name="training_phrase_4">Say: "Open my messages"</string>
+    <string name="training_phrase_5">Say: "Take a screenshot"</string>
+    <string name="training_complete">Voice training completed successfully</string>
+    <string name="training_failed">Voice training failed. Please try again.</string>
+    <string name="voice_verified">Voice verified successfully</string>
+    <string name="voice_verification_failed">Voice verification failed</string>
+    
+    <!-- Permissions -->
+    <string name="permission_microphone">Microphone permission is required for voice recognition</string>
+    <string name="permission_camera">Camera permission is required for photo capture</string>
+    <string name="permission_location">Location permission is required for navigation</string>
+    <string name="permission_sms">SMS permission is required for messaging</string>
+    <string name="permission_contacts">Contacts permission is required for messaging</string>
+    <string name="permission_storage">Storage permission is required for file operations</string>
+    
+    <!-- Smart Home -->
+    <string name="smart_home_title">Smart Home</string>
+    <string name="discover_devices">Discover Devices</string>
+    <string name="device_list">Device List</string>
+    <string name="device_control">Device Control</string>
+    <string name="turn_on_device">Turn on %1$s</string>
+    <string name="turn_off_device">Turn off %1$s</string>
+    <string name="set_temperature">Set temperature to %1$s°C</string>
+    <string name="device_not_found">Device not found</string>
+    <string name="device_control_failed">Device control failed</string>
+    
+    <!-- Gaming -->
+    <string name="gaming_title">Gaming</string>
+    <string name="rock_paper_scissors">Rock Paper Scissors</string>
+    <string name="number_guessing">Number Guessing</string>
+    <string name="word_game">Word Game</string>
+    <string name="game_won">You won!</string>
+    <string name="game_lost">You lost!</string>
+    <string name="game_tied">It\'s a tie!</string>
+    
+    <!-- Communication -->
+    <string name="communication_title">Communication</string>
+    <string name="send_sms">Send SMS</string>
+    <string name="make_call">Make Call</string>
+    <string name="send_email">Send Email</string>
+    <string name="message_sent">Message sent successfully</string>
+    <string name="message_failed">Failed to send message</string>
+    <string name="call_initiated">Call initiated</string>
+    <string name="call_failed">Failed to make call</string>
+    
+    <!-- Health -->
+    <string name="health_title">Health</string>
+    <string name="health_data">Health Data</string>
+    <string name="fitness_tracking">Fitness Tracking</string>
+    <string name="medication_reminder">Medication Reminder</string>
+    <string name="emergency_contact">Emergency Contact</string>
+    <string name="steps_today">Steps today: %1$s</string>
+    <string name="heart_rate">Heart rate: %1$s BPM</string>
+    <string name="calories_burned">Calories burned: %1$s</string>
+    
+    <!-- Emergency -->
+    <string name="emergency_title">Emergency</string>
+    <string name="emergency_call">Emergency Call</string>
+    <string name="emergency_contacts">Emergency Contacts</string>
+    <string name="emergency_call_initiated">Emergency call initiated</string>
+    <string name="emergency_call_failed">Failed to make emergency call</string>
+    
+    <!-- System -->
+    <string name="system_title">System</string>
+    <string name="battery_status">Battery Status</string>
+    <string name="storage_info">Storage Information</string>
+    <string name="network_info">Network Information</string>
+    <string name="device_info">Device Information</string>
+    <string name="battery_level">Battery level: %1$s%%</string>
+    <string name="storage_used">Storage used: %1$s GB</string>
+    <string name="network_type">Network type: %1$s</string>
+    
+    <!-- Music -->
+    <string name="music_title">Music</string>
+    <string name="play_music">Play Music</string>
+    <string name="pause_music">Pause Music</string>
+    <string name="next_track">Next Track</string>
+    <string name="previous_track">Previous Track</string>
+    <string name="music_playing">Music is playing</string>
+    <string name="music_paused">Music is paused</string>
+    <string name="no_music_app">No music app found</string>
+    
+    <!-- Timer and Alarm -->
+    <string name="timer_title">Timer</string>
+    <string name="alarm_title">Alarm</string>
+    <string name="set_timer">Set Timer</string>
+    <string name="set_alarm">Set Alarm</string>
+    <string name="timer_set">Timer set for %1$s minutes</string>
+    <string name="alarm_set">Alarm set for %1$s</string>
+    <string name="timer_failed">Failed to set timer</string>
+    <string name="alarm_failed">Failed to set alarm</string>
+    
+    <!-- Navigation -->
+    <string name="navigation_title">Navigation</string>
+    <string name="navigate_to">Navigate to %1$s</string>
+    <string name="navigation_started">Starting navigation to %1$s</string>
+    <string name="navigation_failed">Could not start navigation to %1$s</string>
+    <string name="location_permission_required">Location permission required for navigation</string>
+    
+    <!-- Weather -->
+    <string name="weather_title">Weather</string>
+    <string name="current_weather">Current Weather</string>
+    <string name="weather_forecast">Weather Forecast</string>
+    <string name="weather_location">Weather for %1$s</string>
+    <string name="weather_temperature">Temperature: %1$s°C</string>
+    <string name="weather_description">Description: %1$s</string>
+    <string name="weather_humidity">Humidity: %1$s%%</string>
+    <string name="weather_wind">Wind: %1$s km/h</string>
+    
+    <!-- News -->
+    <string name="news_title">News</string>
+    <string name="latest_news_title">Latest News</string>
+    <string name="news_category">News Category</string>
+    <string name="news_headlines">News Headlines</string>
+    <string name="news_article">News Article</string>
+    
+    <!-- Calculator -->
+    <string name="calculator_title">Calculator</string>
+    <string name="calculation">Calculation</string>
+    <string name="math_expression">Mathematical Expression</string>
+    <string name="calculation_result">Calculation Result</string>
+    
+    <!-- Translation -->
+    <string name="translation_title">Translation</string>
+    <string name="translate_text">Translate Text</string>
+    <string name="source_language">Source Language</string>
+    <string name="target_language">Target Language</string>
+    <string name="translation_result">Translation Result</string>
+    
+    <!-- Focus Mode -->
+    <string name="focus_mode_title">Focus Mode</string>
+    <string name="start_focus_session">Start Focus Session</string>
+    <string name="end_focus_session">End Focus Session</string>
+    <string name="focus_break">Focus Break</string>
+    <string name="focus_statistics">Focus Statistics</string>
+    <string name="focus_duration">Focus Duration</string>
+    <string name="focus_sessions_count">Focus Sessions Count</string>
+    <string name="focus_productivity">Focus Productivity</string>
+    
+    <!-- GitHub -->
+    <string name="github_title">GitHub</string>
+    <string name="create_repository">Create Repository</string>
+    <string name="repository_name">Repository Name</string>
+    <string name="repository_created">Repository created successfully</string>
+    <string name="repository_failed">Failed to create repository</string>
+    <string name="github_token_required">GitHub token required</string>
+    
+    <!-- Internet Speed -->
+    <string name="internet_speed_title">Internet Speed</string>
+    <string name="testing_speed">Testing internet speed...</string>
+    <string name="download_speed">Download Speed</string>
+    <string name="upload_speed">Upload Speed</string>
+    <string name="ping">Ping</string>
+    
+    <!-- IPL Score -->
+    <string name="ipl_score_title">IPL Score</string>
+    <string name="current_match">Current Match</string>
+    <string name="team_score">Team Score</string>
+    <string name="match_status">Match Status</string>
+    
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="confirm">Confirm</string>
+    <string name="reject">Reject</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="add">Add</string>
+    <string name="remove">Remove</string>
+    <string name="search">Search</string>
+    <string name="filter">Filter</string>
+    <string name="sort">Sort</string>
+    <string name="refresh">Refresh</string>
+    <string name="loading">Loading...</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="warning">Warning</string>
+    <string name="info">Information</string>
+    <string name="unknown">Unknown</string>
+    <string name="not_available">Not Available</string>
+    <string name="coming_soon">Coming Soon</string>
+    <string name="under_development">Under Development</string>
+</resources> 
