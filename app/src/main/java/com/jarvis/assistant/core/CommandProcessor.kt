@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.jarvis.assistant.R
+import com.jarvis.assistant.features.FlashlightManager
 import com.jarvis.assistant.features.FocusModeManager
 import com.jarvis.assistant.services.WeatherService
 import com.jarvis.assistant.services.NewsService
@@ -20,13 +21,13 @@ import java.util.*
 
 class CommandProcessor(
     private val context: Context,
-    // speak-функция из MainActivity — избегаем неинициализированного TTS
     private val speak: (String) -> Unit
 ) {
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val weatherService = WeatherService()
     private val newsService = NewsService()
+    private val flashlightManager = FlashlightManager(context)
     private val scope = CoroutineScope(Dispatchers.Main)
 
     companion object {
@@ -49,7 +50,6 @@ class CommandProcessor(
             .trim()
             .ifEmpty { command }
 
-        // Пробуем Intent ACTION_WEB_SEARCH (откроет браузер по умолчанию)
         val searchIntent = Intent(Intent.ACTION_WEB_SEARCH).apply {
             putExtra(android.app.SearchManager.QUERY, query)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -75,7 +75,6 @@ class CommandProcessor(
             .trim()
             .ifEmpty { command }
 
-        // Сначала пробуем открыть приложение YouTube с поиском
         val ytAppIntent = Intent(Intent.ACTION_SEARCH).apply {
             setPackage("com.google.android.youtube")
             putExtra("query", query)
@@ -85,7 +84,6 @@ class CommandProcessor(
         if (context.packageManager.resolveActivity(ytAppIntent, 0) != null) {
             launchActivity(ytAppIntent, "Ищу на YouTube: $query")
         } else {
-            // Если YouTube не установлен — открываем в браузере
             openUrl("https://www.youtube.com/results?search_query=${Uri.encode(query)}")
             speak("Ищу на YouTube: $query")
         }
@@ -183,6 +181,19 @@ class CommandProcessor(
         speak("Громкость уменьшена")
     }
 
+    // ── Фонарик ────────────────────────────────────────────────────────────
+
+    fun toggleFlashlight() {
+        flashlightManager.toggleFlashlight { success ->
+            if (success) {
+                val state = if (flashlightManager.isOn()) "включён" else "выключен"
+                speak("Фонарик $state")
+            } else {
+                speak("Не удалось управлять фонариком")
+            }
+        }
+    }
+
     // ── Приложения ─────────────────────────────────────────────────────────
 
     fun openApp(command: String) {
@@ -194,7 +205,6 @@ class CommandProcessor(
 
         val pm = context.packageManager
 
-        // 1. Пробуем по известным пакетам
         val resolvedPackage = resolvePackageName(appName)
         if (resolvedPackage != appName) {
             val intent = pm.getLaunchIntentForPackage(resolvedPackage)
@@ -205,7 +215,6 @@ class CommandProcessor(
             }
         }
 
-        // 2. Ищем по лаунчер-приложениям (работает на Android 11+ с <queries> в манифесте)
         val launcherIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
         val allApps = pm.queryIntentActivities(launcherIntent, 0)
         val match = allApps.firstOrNull {
@@ -336,9 +345,6 @@ class CommandProcessor(
     }
 
     // ── Запуск Activity (безопасно из фона) ────────────────────────────────
-    // На Android 10+ нельзя запустить Activity из фона напрямую.
-    // Если startActivity бросает исключение — показываем уведомление,
-    // по нажатию на которое пользователь откроет нужное приложение.
 
     private fun launchActivity(intent: Intent, message: String) {
         speak(message)
