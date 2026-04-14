@@ -26,7 +26,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <!-- Communication Permissions -->
     <uses-permission android:name="android.permission.SEND_SMS" />
@@ -35,7 +34,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- Device Control Permissions -->
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" 
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
     <!-- Biometric Permission -->
@@ -69,19 +68,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Voice Recognition Service -->
-        <service
-            android:name=".services.VoiceRecognitionService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="microphone" />
-
-        <!-- Text-to-Speech Service -->
-        <service
-            android:name=".services.TextToSpeechService"
-            android:enabled="true"
-            android:exported="false" />
-
         <!-- Background Processing Service -->
         <service
             android:name=".services.JARVISBackgroundService"
@@ -89,52 +75,6 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
-        <!-- Camera Activity -->
-        <activity
-            android:name=".ui.CameraActivity"
-            android:exported="false"
-            android:theme="@style/Theme.JARVISAssistant" />
-
-        <!-- Settings Activity -->
-        <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.JARVISAssistant" />
-
-        <!-- Analytics Activity -->
-        <activity
-            android:name=".ui.AnalyticsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.JARVISAssistant" />
-
-        <!-- Voice Training Activity -->
-        <activity
-            android:name=".ui.VoiceTrainingActivity"
-            android:exported="false"
-            android:theme="@style/Theme.JARVISAssistant" />
-
-        <!-- Receiver for Wake Word Detection -->
-        <receiver
-            android:name=".receivers.WakeWordReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.USER_PRESENT" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Provider for Settings -->
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="com.jarvis.assistant.core.JARVISInitializer"
-                android:value="androidx.startup" />
-        </provider>
-
     </application>
 
-</manifest> 
+</manifest>
