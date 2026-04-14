@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
+import kotlin.math.cos
 import kotlin.math.sin
 
 class VoiceVisualizer @JvmOverloads constructor(
@@ -49,11 +50,11 @@ class VoiceVisualizer @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        
+
         val centerX = width / 2f
         val centerY = height / 2f
         val radius = (minOf(width, height) / 4f) * (1 + amplitude * 0.5f)
-        
+
         // Draw animated circles
         for (i in 0..2) {
             val alpha = (255 * (1 - i * 0.3f)).toInt()
@@ -61,7 +62,7 @@ class VoiceVisualizer @JvmOverloads constructor(
             val currentRadius = radius * (1 + i * 0.2f)
             canvas.drawCircle(centerX, centerY, currentRadius, paint)
         }
-        
+
         // Draw wave effect
         paint.alpha = 128
         val waveCount = 8
@@ -73,4 +74,4 @@ class VoiceVisualizer @JvmOverloads constructor(
             canvas.drawCircle(x, y, 8f, paint)
         }
     }
-} 
+}
