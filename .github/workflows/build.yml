@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ─── DEBUG BUILD (на каждый push/PR) ───────────────────────────────────────
+  # ─── DEBUG BUILD ────────────────────────────────────────────────────────────
   build:
     name: Build Debug APK
     runs-on: ubuntu-latest
@@ -26,6 +26,12 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Download Gradle Wrapper JAR
+        run: |
+          mkdir -p gradle/wrapper
+          curl -sL "https://github.com/gradle/gradle/raw/v7.6.0/gradle/wrapper/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -50,7 +56,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
-  # ─── RELEASE BUILD + GITHUB RELEASE + TELEGRAM (только push в main/master) ─
+  # ─── RELEASE BUILD + GITHUB RELEASE + TELEGRAM ─────────────────────────────
   build-release:
     name: Build & Publish Release APK
     runs-on: ubuntu-latest
@@ -69,6 +75,12 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Download Gradle Wrapper JAR
+        run: |
+          mkdir -p gradle/wrapper
+          curl -sL "https://github.com/gradle/gradle/raw/v7.6.0/gradle/wrapper/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -99,7 +111,6 @@ jobs:
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD \
             --stacktrace
 
-      # ── Получаем версию из build.gradle ──────────────────────────────────────
       - name: Get version name
         id: version
         run: |
@@ -109,7 +120,6 @@ jobs:
           echo "code=$BUILD" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION-$BUILD" >> $GITHUB_OUTPUT
 
-      # ── GitHub Release ────────────────────────────────────────────────────────
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -117,24 +127,19 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "JARVIS Assistant ${{ steps.version.outputs.name }} (build ${{ steps.version.outputs.code }})"
           body: |
-            ## 🤖 JARVIS Assistant ${{ steps.version.outputs.name }}
+            ## JARVIS Assistant ${{ steps.version.outputs.name }}
 
-            **Build:** `${{ steps.version.outputs.code }}`
-            **Commit:** `${{ github.sha }}`
-            **Branch:** `${{ github.ref_name }}`
+            **Build:** ${{ steps.version.outputs.code }}
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.ref_name }}
 
-            ### Изменения
             ${{ github.event.head_commit.message }}
-
-            ---
-            📥 Скачай APK ниже и установи на Android.
           files: app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Отправка APK файлом в Telegram ───────────────────────────────────────
       - name: Send APK to Telegram
         run: |
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
@@ -143,14 +148,13 @@ jobs:
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
           RELEASE_URL="${{ steps.create_release.outputs.url }}"
-          TEXT="🤖 JARVIS Assistant v${VERSION} (build ${BUILD})%0A%0A✅ Сборка успешна%0ACommit: ${SHORT_SHA}%0ARelease: ${RELEASE_URL}"
+          TEXT="JARVIS Assistant v${VERSION} (build ${BUILD}) - Сборка успешна! Commit: ${SHORT_SHA} Release: ${RELEASE_URL}"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
             -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
             -F "document=@${APK_PATH}" \
             -F "caption=${TEXT}"
 
-      # ── Уведомление об ошибке в Telegram ─────────────────────────────────────
       - name: Notify Telegram on failure
         if: failure()
         run: |
@@ -160,4 +164,4 @@ jobs:
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d "text=❌ Сборка упала! Проект: JARVIS Assistant%0AКоммит: ${SHORT_SHA}%0AЛоги: ${LOGS_URL}"
+            -d "text=Сборка упала! JARVIS Assistant. Коммит: ${SHORT_SHA}. Логи: ${LOGS_URL}"
