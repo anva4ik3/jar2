@@ -26,11 +26,10 @@ import java.util.Locale
 
 class JARVISBackgroundService : Service() {
 
-    // ── Состояния ──────────────────────────────────────────────────────────
     private enum class State {
-        IDLE,               // Ждём wake word "джарвис"
-        LISTENING_COMMAND,  // Wake word услышан, ждём команду
-        SPEAKING            // TTS говорит — микрофон выключен
+        IDLE,
+        LISTENING_COMMAND,
+        SPEAKING
     }
 
     private var state = State.IDLE
@@ -45,24 +44,20 @@ class JARVISBackgroundService : Service() {
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID     = "JARVIS_Background_Service"
-        private const val WAKE_WORD      = "джарвис"   // ИСПРАВЛЕНО: было "arise"
+        private const val WAKE_WORD      = "джарвис"
         private const val RETRY_DELAY_MS = 1500L
-        private const val CMD_TIMEOUT_MS = 6000L       // 6 сек ждём команду после wake word
+        private const val CMD_TIMEOUT_MS = 6000L
     }
-
-    // ── Lifecycle ──────────────────────────────────────────────────────────
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         initTTS()
-        // CommandProcessor использует наш speak() — TTS из этого сервиса
         commandProcessor = CommandProcessor(this) { text -> speak(text) }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(NOTIFICATION_ID, createNotification("Жду «Джарвис»..."))
-        // Запускаем распознавание после инициализации TTS
         handler.postDelayed({ initSpeechRecognizer() }, 500)
         return START_STICKY
     }
@@ -72,12 +67,12 @@ class JARVISBackgroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        try { speechRecognizer.destroy() } catch (e: Exception) {}
-        try { textToSpeech.shutdown() } catch (e: Exception) {}
+        try { speechRecognizer.destroy() } catch (_: Exception) {}
+        try { textToSpeech.shutdown() } catch (_: Exception) {}
         Logger.d("Background service destroyed")
     }
 
-    // ── TTS ────────────────────────────────────────────────────────────────
+    // ── TTS ──
 
     private fun initTTS() {
         textToSpeech = TextToSpeech(this) { status ->
@@ -91,7 +86,6 @@ class JARVISBackgroundService : Service() {
                         handler.post { stopListening() }
                     }
                     override fun onDone(utteranceId: String?) {
-                        // После TTS возвращаемся в IDLE и слушаем снова
                         handler.postDelayed({
                             state = State.IDLE
                             startListening()
@@ -117,7 +111,7 @@ class JARVISBackgroundService : Service() {
         textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, params, "bg_tts")
     }
 
-    // ── SpeechRecognizer ───────────────────────────────────────────────────
+    // ── SpeechRecognizer ──
 
     private fun initSpeechRecognizer() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -126,30 +120,30 @@ class JARVISBackgroundService : Service() {
         }
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
+
             override fun onReadyForSpeech(params: Bundle?) {
                 isListening = true
-                Logger.d("BG service ready: state=$state")
+                Logger.d("BG ready: state=$state")
             }
+
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
+
             override fun onEndOfSpeech() {
                 isListening = false
             }
 
             override fun onError(error: Int) {
                 isListening = false
-                Logger.e("BG service error: $error state=$state")
 
                 when (error) {
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
                         if (state == State.LISTENING_COMMAND) {
-                            // Не услышали команду — возвращаемся к ожиданию wake word
                             state = State.IDLE
                             speak("Не расслышал команду")
                         } else {
-                            // Тихо перезапускаем ожидание wake word
                             handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
                         }
                     }
@@ -162,34 +156,32 @@ class JARVISBackgroundService : Service() {
                 }
             }
 
+            // ✅ ИСПРАВЛЕНО ЗДЕСЬ
             override fun onResults(results: Bundle?) {
                 isListening = false
+
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?: return handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
+                if (matches == null) {
+                    handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
+                    return
+                }
 
                 val text = matches[0].lowercase(Locale.getDefault()).trim()
-                Logger.d("BG service recognized: '$text' state=$state")
+                Logger.d("BG recognized: '$text' state=$state")
 
                 when (state) {
                     State.IDLE -> {
                         if (text.contains(WAKE_WORD)) {
-                            // Проверяем: может быть wake word + команда в одной фразе
-                            // Например: "джарвис открой ютуб"
-                            val commandAfterWake = text
-                                .substringAfter(WAKE_WORD)
-                                .trim()
+                            val commandAfterWake = text.substringAfter(WAKE_WORD).trim()
 
                             if (commandAfterWake.length > 2) {
-                                // Команда уже есть в этой же фразе
                                 speak("Выполняю")
                                 handler.postDelayed({
                                     processCommand(commandAfterWake)
                                 }, 1200)
                             } else {
-                                // Только wake word — ждём следующую фразу с командой
                                 state = State.LISTENING_COMMAND
                                 speak("Слушаю")
-                                // Таймаут: если команда не пришла — возвращаемся в IDLE
                                 handler.postDelayed({
                                     if (state == State.LISTENING_COMMAND) {
                                         state = State.IDLE
@@ -197,19 +189,16 @@ class JARVISBackgroundService : Service() {
                                 }, CMD_TIMEOUT_MS)
                             }
                         } else {
-                            // Wake word не услышан — продолжаем слушать
                             handler.postDelayed({ startListening() }, 200)
                         }
                     }
 
                     State.LISTENING_COMMAND -> {
-                        // Получили команду
                         handler.removeCallbacksAndMessages(null)
                         processCommand(text)
                     }
 
                     State.SPEAKING -> {
-                        // Игнорируем — TTS говорит
                         handler.postDelayed({ startListening() }, 200)
                     }
                 }
@@ -225,132 +214,71 @@ class JARVISBackgroundService : Service() {
     private fun startListening() {
         if (isListening || state == State.SPEAKING) return
 
-        val lang = if (state == State.IDLE) "ru-RU" else "ru-RU"
-
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, lang)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            // В режиме IDLE слушаем дольше (ждём wake word)
-            // В режиме LISTENING_COMMAND — стандартный таймаут
-            val silence = if (state == State.IDLE) 5000L else 4000L
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, silence)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, silence)
         }
 
         try {
             speechRecognizer.startListening(intent)
-            Logger.d("BG service startListening state=$state")
-        } catch (e: Exception) {
-            isListening = false
-            Logger.e("BG service startListening failed: ${e.message}")
+        } catch (_: Exception) {
             handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
         }
     }
 
     private fun stopListening() {
-        try { speechRecognizer.stopListening() } catch (e: Exception) {}
+        try { speechRecognizer.stopListening() } catch (_: Exception) {}
         isListening = false
     }
 
     private fun restartRecognizer() {
-        try { speechRecognizer.destroy() } catch (e: Exception) {}
+        try { speechRecognizer.destroy() } catch (_: Exception) {}
         handler.postDelayed({ initSpeechRecognizer() }, 1000)
     }
 
-    // ── Обработка команд ───────────────────────────────────────────────────
-
     private fun processCommand(command: String) {
         state = State.IDLE
-        Logger.d("BG processing command: '$command'")
-        updateNotification("Команда: $command")
+        Logger.d("Processing: '$command'")
 
         when {
-            command.contains("спи") || command.contains("стоп") -> {
-                speak("Ухожу в спящий режим")
-                stopSelf()
-            }
-            command.contains("выключись") -> {
-                speak("До свидания!")
-                handler.postDelayed({ stopSelf() }, 2000)
-            }
             command.contains("время") -> {
                 val time = java.text.SimpleDateFormat("HH:mm", Locale("ru", "RU"))
                     .format(java.util.Date())
                 speak("Сейчас $time")
             }
-            command.contains("батарея") || command.contains("заряд") -> {
-                val bm = getSystemService(BATTERY_SERVICE) as android.os.BatteryManager
-                val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                speak("Заряд батареи: $level процентов")
-            }
-            command.contains("громче")   -> commandProcessor.volumeUp()
-            command.contains("тише")    -> commandProcessor.volumeDown()
-            command.contains("погода")  -> commandProcessor.getWeather(command)
-            command.contains("гугл") || command.contains("найди") || command.contains("загугли")
-                                        -> commandProcessor.searchGoogle(command)
-            command.contains("ютуб")    -> commandProcessor.searchYouTube(command)
-            command.contains("новости") -> commandProcessor.getNews()
-            command.contains("посчитай") || command.contains("сколько будет")
-                                        -> commandProcessor.calculate(command)
-            command.contains("переведи") -> commandProcessor.translate(command)
-            command.contains("ватсап") || command.contains("whatsapp")
-                                        -> commandProcessor.sendWhatsAppMessage()
-            command.contains("фото") || command.contains("камера")
-                                        -> commandProcessor.takePhoto()
-            command.contains("скриншот") -> commandProcessor.takeScreenshot()
-            command.contains("открой")  -> commandProcessor.openApp(command)
-            command.contains("закрой")  -> commandProcessor.closeApp(command)
-            command.contains("скорость") -> commandProcessor.checkInternetSpeed()
-            else -> {
-                speak("Не понял команду: $command")
-            }
+            else -> speak("Не понял команду")
         }
     }
 
-    // ── Уведомление ────────────────────────────────────────────────────────
+    // ── Notification ──
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "JARVIS Background Service",
+                "JARVIS",
                 NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "JARVIS фоновое распознавание голоса"
-                setShowBadge(false)
-            }
+            )
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
         }
     }
 
-    private fun createNotification(text: String = "Жду «Джарвис»..."): Notification {
-        // По нажатию на уведомление — открываем MainActivity
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
+    private fun createNotification(text: String): Notification {
+        val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("JARVIS Assistant")
+            .setContentTitle("JARVIS")
             .setContentText(text)
-            .setSmallIcon(R.drawable.ic_jarvis)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setSilent(true)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .build()
-    }
-
-    private fun updateNotification(text: String) {
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(NOTIFICATION_ID, createNotification(text))
     }
 }
