@@ -5,13 +5,30 @@ import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
 import android.speech.tts.TextToSpeech
-import android.widget.Toast
-import com.jarvis.assistant.features.*
-import com.jarvis.assistant.services.WeatherService
-import com.jarvis.assistant.services.NewsService
+import com.jarvis.assistant.features.AlarmManager
+import com.jarvis.assistant.features.AppManager
+import com.jarvis.assistant.features.BatteryManager
+import com.jarvis.assistant.features.BluetoothManager
+import com.jarvis.assistant.features.CameraManager
+import com.jarvis.assistant.features.EmergencyManager
+import com.jarvis.assistant.features.FlashlightManager
+import com.jarvis.assistant.features.FocusModeManager
+import com.jarvis.assistant.features.GameManager
+import com.jarvis.assistant.features.HealthManager
+import com.jarvis.assistant.features.LocationManager
+import com.jarvis.assistant.features.MusicManager
+import com.jarvis.assistant.features.SMSManager
+import com.jarvis.assistant.features.ScreenshotManager
+import com.jarvis.assistant.features.SmartHomeManager
+import com.jarvis.assistant.features.TimerManager
+import com.jarvis.assistant.features.TranslatorService
+import com.jarvis.assistant.features.WhatsAppManager
+import com.jarvis.assistant.features.WiFiManager
 import com.jarvis.assistant.services.GitHubService
-import com.jarvis.assistant.services.SpeedTestService
 import com.jarvis.assistant.services.IPLScoreService
+import com.jarvis.assistant.services.NewsService
+import com.jarvis.assistant.services.SpeedTestService
+import com.jarvis.assistant.services.WeatherService
 import java.util.*
 
 class CommandProcessor(private val context: Context) {
@@ -41,7 +58,6 @@ class CommandProcessor(private val context: Context) {
         textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
-    // Weather Commands
     fun getWeather(command: String) {
         val location = extractLocationFromCommand(command)
         weatherService.getWeather(location) { weatherInfo ->
@@ -53,18 +69,15 @@ class CommandProcessor(private val context: Context) {
         return command.replace("weather", "").replace("in", "").trim()
     }
 
-    // Search Commands
     fun searchGoogle(command: String) {
         val query = command.replace("google", "").trim()
-        val searchUrl = "https://www.google.com/search?q=${Uri.encode(query)}"
-        openUrl(searchUrl)
+        openUrl("https://www.google.com/search?q=${Uri.encode(query)}")
         speak("Searching Google for $query")
     }
 
     fun searchYouTube(command: String) {
         val query = command.replace("youtube", "").trim()
-        val searchUrl = "https://www.youtube.com/results?search_query=${Uri.encode(query)}"
-        openUrl(searchUrl)
+        openUrl("https://www.youtube.com/results?search_query=${Uri.encode(query)}")
         speak("Searching YouTube for $query")
     }
 
@@ -74,7 +87,6 @@ class CommandProcessor(private val context: Context) {
         context.startActivity(intent)
     }
 
-    // News Commands
     fun getNews() {
         newsService.getLatestNews { newsList ->
             val newsText = newsList.take(3).joinToString(". ") { it.title }
@@ -82,88 +94,57 @@ class CommandProcessor(private val context: Context) {
         }
     }
 
-    // Calculator Commands
     fun calculate(command: String) {
         val expression = command.replace("calculate", "").trim()
         try {
-            val result = evaluateExpression(expression)
+            val result = expression.toDoubleOrNull() ?: 0.0
             speak("The result is $result")
         } catch (e: Exception) {
             speak("Sorry, I couldn't calculate that expression")
         }
     }
 
-    private fun evaluateExpression(expression: String): Double {
-        return expression.toDoubleOrNull() ?: 0.0
-    }
-
-    // Focus Mode Commands
     fun enterFocusMode() {
-        val focusManager = FocusModeManager(context)
-        focusManager.startFocusSession()
+        FocusModeManager(context).startFocusSession()
         speak("Entering focus mode. I'll minimize distractions for you.")
     }
 
     fun showFocusAnalytics() {
-        val focusManager = FocusModeManager(context)
-        val analytics = focusManager.getFocusAnalytics()
+        val analytics = FocusModeManager(context).getFocusAnalytics()
         speak("Your focus analytics: Total focus time ${analytics.totalTime} minutes, Sessions: ${analytics.sessionCount}")
     }
 
-    // Translation Commands
     fun translate(command: String) {
         val text = command.replace("translate", "").trim()
-        val translator = TranslatorService()
-        translator.translate(text, "en") { translatedText ->
+        TranslatorService().translate(text, "en") { translatedText ->
             speak("Translation: $translatedText")
         }
     }
 
-    // WhatsApp Commands
     fun sendWhatsAppMessage() {
-        val whatsAppManager = WhatsAppManager(context)
-        whatsAppManager.sendMessage { success ->
-            if (success) {
-                speak("WhatsApp message sent successfully")
-            } else {
-                speak("Failed to send WhatsApp message")
-            }
+        WhatsAppManager(context).sendMessage { success ->
+            speak(if (success) "WhatsApp message sent successfully" else "Failed to send WhatsApp message")
         }
     }
 
-    // Gaming Commands
     fun playGame() {
-        val gameManager = GameManager()
-        gameManager.startRockPaperScissors { result ->
+        GameManager().startRockPaperScissors { result ->
             speak("Game result: $result")
         }
     }
 
-    // Screenshot Commands
     fun takeScreenshot() {
-        val screenshotManager = ScreenshotManager(context)
-        screenshotManager.takeScreenshot { success ->
-            if (success) {
-                speak("Screenshot captured successfully")
-            } else {
-                speak("Failed to capture screenshot")
-            }
+        ScreenshotManager(context).takeScreenshot { success ->
+            speak(if (success) "Screenshot captured successfully" else "Failed to capture screenshot")
         }
     }
 
-    // Camera Commands
     fun takePhoto() {
-        val cameraManager = com.jarvis.assistant.features.CameraManager(context)
-        cameraManager.takePhoto { success ->
-            if (success) {
-                speak("Photo captured successfully")
-            } else {
-                speak("Failed to capture photo")
-            }
+        CameraManager(context).takePhoto { success ->
+            speak(if (success) "Photo captured successfully" else "Failed to capture photo")
         }
     }
 
-    // Volume Control Commands
     fun volumeUp() {
         audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND)
         speak("Volume increased")
@@ -174,78 +155,60 @@ class CommandProcessor(private val context: Context) {
         speak("Volume decreased")
     }
 
-    // App Management Commands
     fun openApp(command: String) {
         val appName = command.replace("open", "").trim()
-        val appManager = AppManager(context)
-        appManager.openApp(appName) { success ->
-            if (success) {
-                speak("Opening $appName")
-            } else {
-                speak("Could not find or open $appName")
-            }
+        AppManager(context).openApp(appName) { success ->
+            speak(if (success) "Opening $appName" else "Could not find or open $appName")
         }
     }
 
     fun closeApp(command: String) {
         val appName = command.replace("close", "").trim()
-        val appManager = AppManager(context)
-        appManager.closeApp(appName) { success ->
-            if (success) {
-                speak("Closing $appName")
-            } else {
-                speak("Could not close $appName")
-            }
+        AppManager(context).closeApp(appName) { success ->
+            speak(if (success) "Closing $appName" else "Could not close $appName")
         }
     }
 
-    // GitHub Commands
     fun createGitHubRepository(command: String) {
-        val repoName = extractRepositoryName(command)
+        val repoName = command
+            .replace("create github repository", "")
+            .replace("create github repo", "")
+            .replace("make github repository", "")
+            .trim()
         gitHubService.getRepositories(repoName) { repos ->
             speak("GitHub repositories for $repoName: ${repos.joinToString()}")
         }
     }
 
-    private fun extractRepositoryName(command: String): String {
-        return command.replace("create github repository", "")
-            .replace("create github repo", "")
-            .replace("make github repository", "")
-            .trim()
-    }
-
-    // Internet Speed Commands
     fun checkInternetSpeed() {
         speedTestService.runSpeedTest { result ->
             speak("Internet speed: $result")
         }
     }
 
-    // IPL Score Commands
     fun getIPLScore() {
         iplScoreService.getLatestScore { score ->
             speak("IPL Score: $score")
         }
     }
 
-    // Smart Home Commands
     fun controlSmartHome(command: String) {
         val smartHomeManager = SmartHomeManager(context)
         when {
             command.contains("turn on") -> {
-                val device = extractDeviceName(command, "turn on")
+                val device = command.replace("turn on", "").trim()
                 smartHomeManager.turnOnDevice(device) { success ->
                     speak(if (success) "Turned on $device" else "Failed to turn on $device")
                 }
             }
             command.contains("turn off") -> {
-                val device = extractDeviceName(command, "turn off")
+                val device = command.replace("turn off", "").trim()
                 smartHomeManager.turnOffDevice(device) { success ->
                     speak(if (success) "Turned off $device" else "Failed to turn off $device")
                 }
             }
             command.contains("set temperature") -> {
-                val temperature = extractTemperature(command)
+                val temperature = command.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 22
                 smartHomeManager.setTemperature(temperature) { success ->
                     speak(if (success) "Temperature set to $temperature°C" else "Failed to set temperature")
                 }
@@ -253,85 +216,50 @@ class CommandProcessor(private val context: Context) {
         }
     }
 
-    private fun extractDeviceName(command: String, action: String): String {
-        return command.replace(action, "").trim()
-    }
-
-    private fun extractTemperature(command: String): Int {
-        return command.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 22
-    }
-
-    // Location Commands
     fun navigateTo(command: String) {
         val destination = command.replace("navigate to", "").trim()
-        val locationManager = com.jarvis.assistant.features.LocationManager(context)
-        locationManager.navigateTo(destination) { success ->
-            if (success) {
-                speak("Starting navigation to $destination")
-            } else {
-                speak("Could not start navigation to $destination")
-            }
+        LocationManager(context).navigateTo(destination) { success ->
+            speak(if (success) "Starting navigation to $destination" else "Could not start navigation to $destination")
         }
     }
 
-    // SMS Commands
     fun sendSMS(command: String) {
-        val smsManager = SMSManager(context)
-        val contact = extractContactFromCommand(command)
-        val message = extractMessageFromCommand(command)
-        smsManager.sendSMS(contact, message) { success ->
+        val contact = command.split(" ").firstOrNull() ?: ""
+        val message = command.replace("send sms", "").trim()
+        SMSManager(context).sendSMS(contact, message) { success ->
             speak(if (success) "SMS sent to $contact" else "Failed to send SMS")
         }
     }
 
-    private fun extractContactFromCommand(command: String): String {
-        return command.split(" ").firstOrNull() ?: ""
-    }
-
-    private fun extractMessageFromCommand(command: String): String {
-        return command.replace("send sms", "").trim()
-    }
-
-    // Emergency Commands
     fun emergencyCall() {
-        val emergencyManager = EmergencyManager(context)
-        emergencyManager.makeEmergencyCall { success ->
+        EmergencyManager(context).makeEmergencyCall { success ->
             speak(if (success) "Emergency call initiated" else "Failed to make emergency call")
         }
     }
 
-    // Battery Commands
     fun getBatteryStatus() {
-        val batteryManager = BatteryManager(context)
-        val status = batteryManager.getBatteryStatus()
+        val status = BatteryManager(context).getBatteryStatus()
         speak("Battery level: ${status.level}%, Status: ${status.status}")
     }
 
-    // Flashlight Commands
     fun toggleFlashlight() {
-        val flashlightManager = FlashlightManager(context)
-        flashlightManager.toggleFlashlight { isOn ->
+        FlashlightManager(context).toggleFlashlight { isOn ->
             speak(if (isOn) "Flashlight turned on" else "Flashlight turned off")
         }
     }
 
-    // WiFi Commands
     fun toggleWiFi() {
-        val wifiManager = WiFiManager(context)
-        wifiManager.toggleWiFi { isEnabled ->
+        WiFiManager(context).toggleWiFi { isEnabled ->
             speak(if (isEnabled) "WiFi enabled" else "WiFi disabled")
         }
     }
 
-    // Bluetooth Commands
     fun toggleBluetooth() {
-        val bluetoothManager = com.jarvis.assistant.features.BluetoothManager(context)
-        bluetoothManager.toggleBluetooth { isEnabled ->
+        BluetoothManager(context).toggleBluetooth { isEnabled ->
             speak(if (isEnabled) "Bluetooth enabled" else "Bluetooth disabled")
         }
     }
 
-    // Health Commands
     fun getHealthData() {
         val healthManager = HealthManager(context)
         healthManager.getStepCount { steps ->
@@ -341,44 +269,29 @@ class CommandProcessor(private val context: Context) {
         }
     }
 
-    // Music Commands
     fun playMusic() {
-        val musicManager = MusicManager(context)
-        musicManager.playMusic { success ->
+        MusicManager(context).playMusic { success ->
             speak(if (success) "Playing music" else "Failed to play music")
         }
     }
 
     fun pauseMusic() {
-        val musicManager = MusicManager(context)
-        musicManager.pauseMusic { success ->
+        MusicManager(context).pauseMusic { success ->
             speak(if (success) "Music paused" else "Failed to pause music")
         }
     }
 
-    // Timer Commands
     fun setTimer(command: String) {
-        val time = extractTimeFromCommand(command)
-        val timerManager = TimerManager(context)
-        timerManager.setTimer(time) { success ->
+        val time = command.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 5
+        TimerManager(context).setTimer(time) { success ->
             speak(if (success) "Timer set for $time minutes" else "Failed to set timer")
         }
     }
 
-    private fun extractTimeFromCommand(command: String): Int {
-        return command.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 5
-    }
-
-    // Alarm Commands
     fun setAlarm(command: String) {
-        val time = extractAlarmTime(command)
-        val alarmManager = com.jarvis.assistant.features.AlarmManager(context)
-        alarmManager.setAlarm(time) { success ->
+        val time = command.replace("set alarm", "").trim()
+        AlarmManager(context).setAlarm(time) { success ->
             speak(if (success) "Alarm set for $time" else "Failed to set alarm")
         }
-    }
-
-    private fun extractAlarmTime(command: String): String {
-        return command.replace("set alarm", "").trim()
     }
 }
