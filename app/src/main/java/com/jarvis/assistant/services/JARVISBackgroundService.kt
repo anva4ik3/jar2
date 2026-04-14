@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -65,7 +66,6 @@ class JARVISBackgroundService : Service() {
             override fun onEndOfSpeech() {
                 Logger.d("Background service end of speech")
                 isListening = false
-                // Restart listening after a short delay
                 restartListening()
             }
 
@@ -102,7 +102,7 @@ class JARVISBackgroundService : Service() {
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
-            
+
             try {
                 speechRecognizer.startListening(intent)
                 isListening = true
@@ -114,7 +114,6 @@ class JARVISBackgroundService : Service() {
     }
 
     private fun restartListening() {
-        // Restart listening after a short delay to avoid continuous recognition
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             startListening()
         }, 1000)
@@ -124,7 +123,6 @@ class JARVISBackgroundService : Service() {
         if (text.contains(WAKE_WORD)) {
             Logger.d("Wake word detected: $WAKE_WORD")
             wakeWordDetector.onWakeWordDetected()
-            // Send broadcast to main activity
             sendBroadcast(Intent("JARVIS_WAKE_WORD_DETECTED"))
         }
     }
@@ -139,7 +137,7 @@ class JARVISBackgroundService : Service() {
                 description = "JARVIS background voice recognition service"
                 setShowBadge(false)
             }
-            
+
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
@@ -161,4 +159,4 @@ class JARVISBackgroundService : Service() {
         speechRecognizer.destroy()
         Logger.d("Background service destroyed")
     }
-} 
+}
