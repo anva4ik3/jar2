@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun initializeComponents() {
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         voiceManager = VoiceManager(this)
-        commandProcessor = CommandProcessor(this)
+        commandProcessor = CommandProcessor(this) { text -> speak(text) }
         textToSpeech = TextToSpeech(this, this)
         setupSpeechRecognizer()
     }
