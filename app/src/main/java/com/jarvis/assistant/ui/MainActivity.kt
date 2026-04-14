@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var commandProcessor: CommandProcessor
     private lateinit var textToSpeech: TextToSpeech
     private lateinit var speechRecognizer: SpeechRecognizer
-    
+
     private var isListening = false
     private var isJARVISActive = false
 
@@ -55,13 +55,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         voiceManager = VoiceManager(this)
         commandProcessor = CommandProcessor(this)
         textToSpeech = TextToSpeech(this, this)
-        
+
         setupSpeechRecognizer()
     }
 
     private fun setupUI() {
         binding.apply {
-            // Voice activation button
             btnVoiceActivation.setOnClickListener {
                 if (isJARVISActive) {
                     deactivateJARVIS()
@@ -70,23 +69,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
             }
 
-            // Settings button
             btnSettings.setOnClickListener {
-                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                Toast.makeText(this@MainActivity, "Settings coming soon", Toast.LENGTH_SHORT).show()
             }
 
-            // Analytics button
             btnAnalytics.setOnClickListener {
-                startActivity(Intent(this@MainActivity, AnalyticsActivity::class.java))
+                Toast.makeText(this@MainActivity, "Analytics coming soon", Toast.LENGTH_SHORT).show()
             }
 
-            // Voice training button
             btnVoiceTraining.setOnClickListener {
-                startActivity(Intent(this@MainActivity, VoiceTrainingActivity::class.java))
+                Toast.makeText(this@MainActivity, "Voice training coming soon", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Observe ViewModel data
         viewModel.isListening.observe(this) { listening ->
             updateListeningUI(listening)
         }
@@ -107,18 +102,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 viewModel.setListening(true)
             }
 
-            override fun onBeginningOfSpeech() {
-                // Voice input started
-            }
+            override fun onBeginningOfSpeech() {}
 
             override fun onRmsChanged(rmsdB: Float) {
-                // Update voice level indicator
                 binding.voiceLevelIndicator.progress = (rmsdB * 10).toInt()
             }
 
-            override fun onBufferReceived(buffer: ByteArray?) {
-                // Audio buffer received
-            }
+            override fun onBufferReceived(buffer: ByteArray?) {}
 
             override fun onEndOfSpeech() {
                 viewModel.setListening(false)
@@ -151,7 +141,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         viewModel.setJARVISStatus("JARVIS is now active. Say 'Arise' to wake up.")
         binding.btnVoiceActivation.text = "Deactivate JARVIS"
         binding.btnVoiceActivation.setBackgroundResource(R.drawable.btn_deactivate)
-        
+
         speak("JARVIS is now active. Say Arise to wake up.")
         startListening()
     }
@@ -161,7 +151,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         viewModel.setJARVISStatus("JARVIS is inactive")
         binding.btnVoiceActivation.text = "Activate JARVIS"
         binding.btnVoiceActivation.setBackgroundResource(R.drawable.btn_activate)
-        
+
         stopListening()
         speak("JARVIS deactivated. Goodbye.")
     }
@@ -174,7 +164,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
-            
+
             try {
                 speechRecognizer.startListening(intent)
                 isListening = true
@@ -193,7 +183,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun processVoiceCommand(command: String) {
         viewModel.setCurrentCommand("You said: $command")
-        
+
         when {
             command.contains(WAKE_WORD) -> {
                 speak("Hello! I'm JARVIS. How can I help you today?")
@@ -276,8 +266,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 commandProcessor.closeApp(command)
                 startListening()
             }
-            command.contains("create github repository") || 
-            command.contains("create github repo") || 
+            command.contains("create github repository") ||
+            command.contains("create github repo") ||
             command.contains("make github repository") -> {
                 commandProcessor.createGitHubRepository(command)
                 startListening()
@@ -366,4 +356,4 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         speechRecognizer.destroy()
         textToSpeech.shutdown()
     }
-} 
+}
