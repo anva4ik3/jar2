@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.jarvis.assistant.R
 import com.jarvis.assistant.core.CommandProcessor
-import com.jarvis.assistant.core.VoiceManager
 import com.jarvis.assistant.databinding.ActivityMainBinding
 import com.jarvis.assistant.services.JARVISBackgroundService
 import com.jarvis.assistant.viewmodels.MainViewModel
@@ -34,53 +33,25 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var textToSpeech: TextToSpeech
     private lateinit var speechRecognizer: SpeechRecognizer
 
-    private var isListening = false
-    private var isJARVISActive = false   // включён ли JARVIS (кнопка)
-    private var awaitingCommand = false  // услышан wake word, ждём команду
-    private var isSpeaking = false
-    private val handler = Handler(Looper.getMainLooper())
-    private val russianLocale = Locale("ru", "RU")
+    private var isListening      = false
+    private var isJARVISActive   = false
+    private var awaitingCommand  = false
+    private var isSpeaking       = false
+    private val handler          = Handler(Looper.getMainLooper())
+    private val russianLocale    = Locale("ru", "RU")
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 123
-        private const val RETRY_DELAY_MS    = 1500L
-        private const val AFTER_TTS_DELAY_MS = 600L
-
-        private const val WAKE_WORD       = "джарвис"
-        private const val CMD_SLEEP       = "спи"
-        private const val CMD_EXIT        = "выключись"
-        private const val CMD_TIME        = "время"
-        private const val CMD_WEATHER     = "погода"
-        private const val CMD_GOOGLE      = "гугл"
-        private const val CMD_SEARCH      = "найди"
-        private const val CMD_YOUTUBE     = "ютуб"
-        private const val CMD_NEWS        = "новости"
-        private const val CMD_CALCULATE   = "посчитай"
-        private const val CMD_CALC2       = "сколько будет"
-        private const val CMD_FOCUS       = "фокус"
-        private const val CMD_TRANSLATE   = "переведи"
-        private const val CMD_WHATSAPP    = "ватсап"
-        private const val CMD_SCREENSHOT  = "скриншот"
-        private const val CMD_PHOTO       = "фото"
-        private const val CMD_VOL_UP      = "громче"
-        private const val CMD_VOL_DOWN    = "тише"
-        private const val CMD_OPEN        = "открой"
-        private const val CMD_CLOSE       = "закрой"
-        private const val CMD_SPEED       = "скорость"
-        private const val CMD_BATTERY     = "батарея"
-        private const val CMD_CHARGE      = "заряд"
-        private const val CMD_CAMERA      = "камера"
-        private const val CMD_ZAGOOGLI    = "загугли"
-
-        // Сколько секунд ждём команду после wake word
-        private const val COMMAND_TIMEOUT_MS = 8000L
+        private const val RETRY_DELAY_MS          = 1500L
+        private const val AFTER_TTS_DELAY_MS      = 600L
+        private const val COMMAND_TIMEOUT_MS      = 8000L
+        private const val WAKE_WORD               = "джарвис"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         stopBackgroundService()
         initializeComponents()
         setupUI()
@@ -100,25 +71,20 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             val result = textToSpeech.setLanguage(russianLocale)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                val installIntent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
-                startActivity(installIntent)
+                startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA))
             }
             textToSpeech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {
+                override fun onStart(u: String?) {
                     isSpeaking = true
                     handler.post { stopListening() }
                 }
-                override fun onDone(utteranceId: String?) {
+                override fun onDone(u: String?) {
                     isSpeaking = false
-                    if (isJARVISActive) {
-                        handler.postDelayed({ startListening() }, AFTER_TTS_DELAY_MS)
-                    }
+                    if (isJARVISActive) handler.postDelayed({ startListening() }, AFTER_TTS_DELAY_MS)
                 }
-                override fun onError(utteranceId: String?) {
+                override fun onError(u: String?) {
                     isSpeaking = false
-                    if (isJARVISActive) {
-                        handler.postDelayed({ startListening() }, AFTER_TTS_DELAY_MS)
-                    }
+                    if (isJARVISActive) handler.postDelayed({ startListening() }, AFTER_TTS_DELAY_MS)
                 }
             })
         }
@@ -139,84 +105,63 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
+            override fun onReadyForSpeech(p: Bundle?) {
                 isListening = true
                 viewModel.setListening(true)
-                val status = if (awaitingCommand) "Слушаю команду..." else "Скажите «Джарвис»"
-                viewModel.setJARVISStatus(status)
+                viewModel.setJARVISStatus(if (awaitingCommand) "Слушаю команду..." else "Скажите «Джарвис»")
             }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {
                 if (rmsdB > 0)
                     binding.voiceLevelIndicator.progress = (rmsdB * 10).toInt().coerceIn(0, 100)
             }
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {
-                isListening = false
-                viewModel.setListening(false)
-            }
+            override fun onBufferReceived(b: ByteArray?) {}
+            override fun onEndOfSpeech() { isListening = false; viewModel.setListening(false) }
             override fun onError(error: Int) {
-                isListening = false
-                viewModel.setListening(false)
+                isListening = false; viewModel.setListening(false)
                 if (!isJARVISActive || isSpeaking) return
-
                 when (error) {
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
                         if (awaitingCommand) {
-                            // Не услышали команду — возвращаемся в режим ожидания wake word
                             awaitingCommand = false
                             viewModel.setJARVISStatus("Скажите «Джарвис»")
                         }
                         handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
                     }
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY ->
                         handler.postDelayed({ restartRecognizer() }, RETRY_DELAY_MS)
-                    }
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
                         viewModel.setJARVISStatus("Нет разрешения на микрофон")
-                    }
-                    else -> {
-                        handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
-                    }
+                    else -> handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
                 }
             }
             override fun onResults(results: Bundle?) {
-                isListening = false
-                viewModel.setListening(false)
+                isListening = false; viewModel.setListening(false)
                 if (isSpeaking) return
-
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val command = matches?.get(0)?.lowercase(russianLocale)?.trim()
-
-                if (!command.isNullOrEmpty()) {
-                    processVoiceCommand(command)
-                } else {
-                    if (isJARVISActive) handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
-                }
+                val command = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.get(0)?.lowercase(russianLocale)?.trim()
+                if (!command.isNullOrEmpty()) processVoiceCommand(command)
+                else if (isJARVISActive) handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
             }
-            override fun onPartialResults(partialResults: Bundle?) {
+            override fun onPartialResults(p: Bundle?) {
                 if (isSpeaking) return
-                partialResults
-                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                p?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     ?.get(0)?.let { binding.tvCurrentCommand.text = it }
             }
-            override fun onEvent(eventType: Int, params: Bundle?) {}
+            override fun onEvent(e: Int, p: Bundle?) {}
         })
     }
 
     private fun startListening() {
         if (isListening || !isJARVISActive || isSpeaking || !hasAudioPermission()) return
-
+        val silenceMs = if (awaitingCommand) 4000L else 6000L
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ru-RU")
-            putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            // Если ждём команду — пауза короче (4 сек), иначе длиннее (6 сек)
-            val silenceMs = if (awaitingCommand) 4000L else 6000L
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, silenceMs)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, silenceMs - 1000L)
         }
@@ -230,16 +175,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun stopListening() {
         try { speechRecognizer.stopListening() } catch (e: Exception) {}
-        isListening = false
-        viewModel.setListening(false)
+        isListening = false; viewModel.setListening(false)
     }
 
     private fun restartRecognizer() {
         try { speechRecognizer.destroy() } catch (e: Exception) {}
         setupSpeechRecognizer()
-        if (isJARVISActive && !isSpeaking) {
+        if (isJARVISActive && !isSpeaking)
             handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
-        }
     }
 
     // ── Активация / Деактивация ────────────────────────────────────────────
@@ -250,8 +193,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             Toast.makeText(this, "Сначала разрешите доступ к микрофону", Toast.LENGTH_LONG).show()
             return
         }
-        isJARVISActive = true
-        awaitingCommand = false
+        isJARVISActive = true; awaitingCommand = false
         viewModel.setJARVISStatus("Скажите «Джарвис»")
         binding.btnVoiceActivation.text = "Деактивировать ДЖАРВИС"
         binding.btnVoiceActivation.setBackgroundResource(R.drawable.btn_deactivate)
@@ -259,8 +201,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun deactivateJARVIS() {
-        isJARVISActive = false
-        awaitingCommand = false
+        isJARVISActive = false; awaitingCommand = false
         handler.removeCallbacksAndMessages(null)
         viewModel.setJARVISStatus("ДЖАРВИС неактивен")
         binding.btnVoiceActivation.text = "Активировать ДЖАРВИС"
@@ -274,18 +215,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun processVoiceCommand(command: String) {
         viewModel.setCurrentCommand("Вы: $command")
 
-        // ── Шаг 1: не в режиме команды → ищем wake word ───────────────────
         if (!awaitingCommand) {
             if (command.contains(WAKE_WORD)) {
                 awaitingCommand = true
-                // Если после "джарвис" сразу идёт команда в той же фразе — обрабатываем
-                val commandAfterWakeWord = command.substringAfter(WAKE_WORD).trim()
-                if (commandAfterWakeWord.isNotEmpty()) {
-                    speak("Слушаю.")
-                    handler.postDelayed({ executeCommand(commandAfterWakeWord) }, 300L)
+                val after = command.substringAfter(WAKE_WORD).trim()
+                if (after.length > 2) {
+                    speak("Выполняю.")
+                    handler.postDelayed({ executeCommand(after) }, 300L)
                 } else {
                     speak("Слушаю.")
-                    // Таймаут: если команды не будет 8 сек — возвращаемся в режим ожидания
                     handler.postDelayed({
                         if (awaitingCommand) {
                             awaitingCommand = false
@@ -294,23 +232,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     }, COMMAND_TIMEOUT_MS)
                 }
             } else {
-                // Wake word не услышан — продолжаем слушать молча
                 if (isJARVISActive) handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
             }
             return
         }
 
-        // ── Шаг 2: в режиме команды → выполняем ──────────────────────────
         awaitingCommand = false
-        handler.removeCallbacksAndMessages(null) // убираем таймаут
+        handler.removeCallbacksAndMessages(null)
         executeCommand(command)
     }
 
-    private fun executeCommand(command: String) {
+    private fun executeCommand(cmd: String) {
         when {
-            command.contains(CMD_SLEEP) -> {
-                isJARVISActive = false
-                awaitingCommand = false
+            // Управление JARVIS
+            cmd.contains("спи") || cmd.contains("стоп") -> {
+                isJARVISActive = false; awaitingCommand = false
                 speak("Ухожу в спящий режим.")
                 handler.post {
                     binding.btnVoiceActivation.text = "Активировать ДЖАРВИС"
@@ -318,40 +254,117 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     viewModel.setJARVISStatus("ДЖАРВИС неактивен")
                 }
             }
-            command.contains(CMD_EXIT) -> {
+            cmd.contains("выключись") -> {
                 speak("До свидания!")
                 handler.postDelayed({ finish() }, 1500L)
             }
-            command.contains(CMD_TIME) -> {
+
+            // Время и дата
+            cmd.contains("время") -> {
                 val time = java.text.SimpleDateFormat("HH:mm", russianLocale).format(Date())
                 speak("Сейчас $time")
             }
-            command.contains(CMD_BATTERY) || command.contains(CMD_CHARGE) -> {
+            cmd.contains("дата") || cmd.contains("число") || cmd.contains("день") -> {
+                val date = java.text.SimpleDateFormat("d MMMM, EEEE", russianLocale).format(Date())
+                speak("Сегодня $date")
+            }
+
+            // Батарея
+            cmd.contains("батарея") || cmd.contains("заряд") -> {
                 val bm = getSystemService(BATTERY_SERVICE) as android.os.BatteryManager
                 val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
                 speak("Заряд батареи: $level процентов")
             }
-            command.contains(CMD_VOL_UP)    -> commandProcessor.volumeUp()
-            command.contains(CMD_VOL_DOWN)  -> commandProcessor.volumeDown()
-            command.contains(CMD_WEATHER)   -> commandProcessor.getWeather(command)
-            command.contains(CMD_YOUTUBE)   -> commandProcessor.searchYouTube(command)
-            command.contains(CMD_GOOGLE) || command.contains(CMD_SEARCH) || command.contains(CMD_ZAGOOGLI)
-                                            -> commandProcessor.searchGoogle(command)
-            command.contains(CMD_NEWS)      -> commandProcessor.getNews()
-            command.contains(CMD_CALCULATE) || command.contains(CMD_CALC2)
-                                            -> commandProcessor.calculate(command)
-            command.contains(CMD_FOCUS)     -> commandProcessor.enterFocusMode()
-            command.contains(CMD_TRANSLATE) -> commandProcessor.translate(command)
-            command.contains(CMD_WHATSAPP)  -> commandProcessor.sendWhatsAppMessage()
-            command.contains(CMD_PHOTO) || command.contains(CMD_CAMERA)
-                                            -> commandProcessor.takePhoto()
-            command.contains(CMD_SCREENSHOT)-> commandProcessor.takeScreenshot()
-            command.contains(CMD_OPEN)      -> commandProcessor.openApp(command)
-            command.contains(CMD_CLOSE)     -> commandProcessor.closeApp(command)
-            command.contains(CMD_SPEED)     -> commandProcessor.checkInternetSpeed()
+
+            // Громкость
+            cmd.contains("громче")             -> commandProcessor.volumeUp()
+            cmd.contains("тише")               -> commandProcessor.volumeDown()
+            cmd.contains("максимальная громкость") || cmd.contains("громкость максимальная") ->
+                commandProcessor.setMaxVolume()
+            cmd.contains("без звука") || cmd.contains("выключи звук") || cmd.contains("тихий режим") ->
+                commandProcessor.setMute()
+            cmd.contains("включи звук")        -> commandProcessor.setUnmute()
+
+            // Фонарик
+            cmd.contains("включи фонарик") || cmd.contains("фонарик включи") ->
+                commandProcessor.flashlightOn()
+            cmd.contains("выключи фонарик") || cmd.contains("фонарик выключи") ->
+                commandProcessor.flashlightOff()
+            cmd.contains("фонарик")            -> commandProcessor.toggleFlashlight()
+
+            // Звонки
+            cmd.contains("позвони") || cmd.contains("набери") || cmd.contains("звони") ->
+                commandProcessor.makeCall(cmd)
+
+            // SMS
+            cmd.contains("отправь смс") || cmd.contains("напиши смс") ||
+            cmd.contains("отправь сообщение") -> commandProcessor.sendSms(cmd)
+
+            // WhatsApp
+            cmd.contains("ватсап") || cmd.contains("whatsapp") ->
+                commandProcessor.sendWhatsAppMessage(cmd)
+
+            // Будильник и таймер
+            cmd.contains("будильник")          -> commandProcessor.setAlarm(cmd)
+            cmd.contains("таймер")             -> commandProcessor.setTimer(cmd)
+
+            // Поиск
+            cmd.contains("ютуб")               -> commandProcessor.searchYouTube(cmd)
+            cmd.contains("гугл") || cmd.contains("найди") || cmd.contains("загугли") ->
+                commandProcessor.searchGoogle(cmd)
+
+            // Новости и расчёты
+            cmd.contains("новости")            -> commandProcessor.getNews()
+            cmd.contains("посчитай") || cmd.contains("сколько будет") ->
+                commandProcessor.calculate(cmd)
+
+            // Навигация
+            cmd.contains("навигация") || cmd.contains("маршрут") || cmd.contains("как добраться") ->
+                commandProcessor.navigateTo(cmd)
+            cmd.contains("покажи на карте") || cmd.contains("где находится") ->
+                commandProcessor.showOnMap(cmd)
+
+            // WiFi, Bluetooth, Яркость
+            cmd.contains("вайфай") || cmd.contains("wifi") || cmd.contains("wi-fi") ->
+                commandProcessor.toggleWifi(cmd)
+            cmd.contains("блютуз") || cmd.contains("bluetooth") ->
+                commandProcessor.toggleBluetooth(cmd)
+            cmd.contains("яркость") || cmd.contains("ярче") || cmd.contains("темнее") ->
+                commandProcessor.setBrightness(cmd)
+
+            // Режим не беспокоить
+            cmd.contains("не беспокоить") || cmd.contains("тихий режим") ->
+                commandProcessor.setDoNotDisturb(true)
+            cmd.contains("выключи не беспокоить") ->
+                commandProcessor.setDoNotDisturb(false)
+
+            // Фокус, перевод
+            cmd.contains("фокус")              -> commandProcessor.enterFocusMode()
+            cmd.contains("переведи")           -> commandProcessor.translate(cmd)
+
+            // Камера
+            cmd.contains("фронталка") || cmd.contains("селфи") ->
+                commandProcessor.openFrontCamera()
+            cmd.contains("фото") || cmd.contains("камера") ->
+                commandProcessor.takePhoto()
+
+            // Скорость, настройки, приложения
+            cmd.contains("скорость интернета") -> commandProcessor.checkInternetSpeed()
+            cmd.contains("открой настройки") || cmd.contains("настройки") ->
+                commandProcessor.openSettings(cmd)
+            cmd.contains("открой") || cmd.contains("запусти") ->
+                commandProcessor.openApp(cmd)
+            cmd.contains("закрой")             -> commandProcessor.closeApp(cmd)
+
+            // Игра
+            cmd.contains("камень ножницы") || cmd.contains("сыграем") ->
+                commandProcessor.playGame()
+
+            // Скриншот
+            cmd.contains("скриншот")           -> commandProcessor.takeScreenshot()
+
             else -> {
                 speak("Не понял команду. Попробуйте ещё раз.")
-                // После ответа автоматически снова войдём в режим команды
                 awaitingCommand = true
             }
         }
@@ -363,11 +376,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (!isJARVISActive) return
         try {
             val intent = Intent(this, JARVISBackgroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+            else startService(intent)
         } catch (e: Exception) {}
     }
 
@@ -392,9 +402,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Toast.makeText(this@MainActivity, "Скоро будет доступно", Toast.LENGTH_SHORT).show()
             }
         }
-        viewModel.isListening.observe(this)     { updateListeningUI(it) }
-        viewModel.currentCommand.observe(this)  { binding.tvCurrentCommand.text = it }
-        viewModel.jarvisStatus.observe(this)    { binding.tvStatus.text = it }
+        viewModel.isListening.observe(this)    { updateListeningUI(it) }
+        viewModel.currentCommand.observe(this) { binding.tvCurrentCommand.text = it }
+        viewModel.jarvisStatus.observe(this)   { binding.tvStatus.text = it }
     }
 
     private fun updateListeningUI(listening: Boolean) {
@@ -410,17 +420,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 PackageManager.PERMISSION_GRANTED
 
     private fun requestPermissions() {
-        val permissions = mutableListOf(
+        val perms = mutableListOf(
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CAMERA,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.SEND_SMS,
-            Manifest.permission.READ_CONTACTS
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.CALL_PHONE
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        val toRequest = permissions.filter {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            perms.add(Manifest.permission.POST_NOTIFICATIONS)
+        val toRequest = perms.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }.toTypedArray()
         if (toRequest.isNotEmpty())
@@ -433,9 +443,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE &&
             grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED &&
-            isJARVISActive) {
-            startListening()
-        }
+            isJARVISActive) startListening()
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
