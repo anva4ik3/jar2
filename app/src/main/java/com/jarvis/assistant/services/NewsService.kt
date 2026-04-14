@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class NewsService {
-    
+
     data class NewsArticle(
         val title: String,
         val description: String,
@@ -15,7 +15,6 @@ class NewsService {
 
     suspend fun getNews(category: String = "general", callback: (List<NewsArticle>) -> Unit) {
         try {
-            // Simulate news API call
             val articles = listOf(
                 NewsArticle(
                     title = "AI Technology Advances",
@@ -30,14 +29,24 @@ class NewsService {
                     url = "https://example.com/news2"
                 )
             )
-            
             withContext(Dispatchers.Main) {
                 callback(articles)
             }
-            
             Logger.d("News service: Retrieved $category news")
         } catch (e: Exception) {
             Logger.e("News service error: ${e.message}")
         }
     }
-} 
+
+    fun getLatestNews(callback: (List<NewsArticle>) -> Unit) {
+        val articles = listOf(
+            NewsArticle(
+                title = "Breaking News",
+                description = "Latest news update",
+                source = "News",
+                url = "https://example.com"
+            )
+        )
+        callback(articles)
+    }
+}
