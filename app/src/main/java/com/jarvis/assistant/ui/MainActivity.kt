@@ -3,6 +3,7 @@ package com.jarvis.assistant.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -36,14 +37,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private var isListening = false
     private var isJARVISActive = false
-    private var isSpeaking = false  // TTS сейчас говорит — не слушаем
+    private var isSpeaking = false
     private val handler = Handler(Looper.getMainLooper())
     private val russianLocale = Locale("ru", "RU")
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 123
-        private const val RETRY_DELAY_MS = 2000L   // 2 секунды между попытками
-        private const val AFTER_TTS_DELAY_MS = 800L // пауза после TTS перед слушанием
+        private const val RETRY_DELAY_MS   = 2000L
+        private const val AFTER_TTS_DELAY_MS = 800L
 
         private const val WAKE_WORD       = "джарвис"
         private const val CMD_SLEEP       = "спи"
@@ -51,9 +52,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         private const val CMD_TIME        = "время"
         private const val CMD_WEATHER     = "погода"
         private const val CMD_GOOGLE      = "гугл"
+        private const val CMD_SEARCH      = "найди"
         private const val CMD_YOUTUBE     = "ютуб"
         private const val CMD_NEWS        = "новости"
         private const val CMD_CALCULATE   = "посчитай"
+        private const val CMD_CALC2       = "сколько будет"
         private const val CMD_FOCUS       = "фокус"
         private const val CMD_TRANSLATE   = "переведи"
         private const val CMD_WHATSAPP    = "ватсап"
@@ -65,7 +68,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         private const val CMD_CLOSE       = "закрой"
         private const val CMD_SPEED       = "скорость"
         private const val CMD_BATTERY     = "батарея"
+        private const val CMD_CHARGE      = "заряд"
         private const val CMD_CAMERA      = "камера"
+        private const val CMD_ZAGOOGLI    = "загугли"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +78,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        stopService(Intent(this, JARVISBackgroundService::class.java))
+        // Останавливаем фоновый сервис — в foreground сами обрабатываем команды
+        stopBackgroundService()
 
         initializeComponents()
         setupUI()
@@ -81,10 +87,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun initializeComponents() {
-        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
-        voiceManager = VoiceManager(this)
+        viewModel        = ViewModelProvider(this)[MainViewModel::class.java]
+        voiceManager     = VoiceManager(this)
         commandProcessor = CommandProcessor(this) { text -> speak(text) }
-        textToSpeech = TextToSpeech(this, this)
+        textToSpeech     = TextToSpeech(this, this)
         setupSpeechRecognizer()
     }
 
@@ -97,7 +103,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 val installIntent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
                 startActivity(installIntent)
             }
-            // Слушаем когда TTS закончил говорить — только тогда перезапускаем микрофон
             textToSpeech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
                     isSpeaking = true
@@ -105,7 +110,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
                 override fun onDone(utteranceId: String?) {
                     isSpeaking = false
-                    // Перезапускаем слушание через небольшую паузу после TTS
                     if (isJARVISActive) {
                         handler.postDelayed({ startListening() }, AFTER_TTS_DELAY_MS)
                     }
@@ -158,7 +162,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 when (error) {
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
-                        // Тихо перезапускаем — нет ничего страшного
                         viewModel.setJARVISStatus("Скажите «Джарвис»")
                         handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
                     }
@@ -176,14 +179,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onResults(results: Bundle?) {
                 isListening = false
                 viewModel.setListening(false)
-                if (isSpeaking) return  // Игнорируем если TTS говорит
+                if (isSpeaking) return
 
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val command = matches?.get(0)?.lowercase()?.trim()
+                val command = matches?.get(0)?.lowercase(russianLocale)?.trim()
                 if (!command.isNullOrEmpty()) {
                     processVoiceCommand(command)
                 } else {
-                    // Пустой результат — просто перезапускаем
                     if (isJARVISActive) handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
                 }
             }
@@ -206,8 +208,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ru-RU")
             putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3) // Берём 3 варианта распознавания
-            // Ждём 4 секунды тишины перед завершением
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 4000L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
         }
@@ -246,7 +247,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.btnVoiceActivation.text = "Деактивировать ДЖАРВИС"
         binding.btnVoiceActivation.setBackgroundResource(R.drawable.btn_deactivate)
         speak("ДЖАРВИС активирован. Скажите Джарвис.")
-        // startListening() запустится сам через UtteranceProgressListener.onDone
     }
 
     private fun deactivateJARVIS() {
@@ -264,7 +264,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun processVoiceCommand(command: String) {
         viewModel.setCurrentCommand("Вы: $command")
 
-        // Проверяем все варианты распознавания на совпадение
         when {
             command.contains(WAKE_WORD)      -> speak("Привет! Чем могу помочь?")
             command.contains(CMD_SLEEP)      -> {
@@ -281,7 +280,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 val time = java.text.SimpleDateFormat("HH:mm", russianLocale).format(Date())
                 speak("Сейчас $time")
             }
-            command.contains(CMD_BATTERY)    -> {
+            command.contains(CMD_BATTERY) || command.contains(CMD_CHARGE) -> {
                 val bm = getSystemService(BATTERY_SERVICE) as android.os.BatteryManager
                 val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
                 speak("Заряд батареи: $level процентов")
@@ -289,25 +288,48 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             command.contains(CMD_VOL_UP)     -> commandProcessor.volumeUp()
             command.contains(CMD_VOL_DOWN)   -> commandProcessor.volumeDown()
             command.contains(CMD_WEATHER)    -> commandProcessor.getWeather(command)
-            command.contains(CMD_GOOGLE)     -> commandProcessor.searchGoogle(command)
             command.contains(CMD_YOUTUBE)    -> commandProcessor.searchYouTube(command)
+            command.contains(CMD_GOOGLE) || command.contains(CMD_SEARCH) || command.contains(CMD_ZAGOOGLI)
+                                             -> commandProcessor.searchGoogle(command)
             command.contains(CMD_NEWS)       -> commandProcessor.getNews()
-            command.contains(CMD_CALCULATE)  -> commandProcessor.calculate(command)
+            command.contains(CMD_CALCULATE) || command.contains(CMD_CALC2)
+                                             -> commandProcessor.calculate(command)
             command.contains(CMD_FOCUS)      -> commandProcessor.enterFocusMode()
             command.contains(CMD_TRANSLATE)  -> commandProcessor.translate(command)
             command.contains(CMD_WHATSAPP)   -> commandProcessor.sendWhatsAppMessage()
-            command.contains(CMD_PHOTO) ||
-            command.contains(CMD_CAMERA)     -> commandProcessor.takePhoto()
+            command.contains(CMD_PHOTO) || command.contains(CMD_CAMERA)
+                                             -> commandProcessor.takePhoto()
             command.contains(CMD_SCREENSHOT) -> commandProcessor.takeScreenshot()
             command.contains(CMD_OPEN)       -> commandProcessor.openApp(command)
             command.contains(CMD_CLOSE)      -> commandProcessor.closeApp(command)
             command.contains(CMD_SPEED)      -> commandProcessor.checkInternetSpeed()
             else -> {
-                // Не понял — молча продолжаем слушать, не спамим голосом
                 viewModel.setJARVISStatus("Не распознано: $command")
                 if (isJARVISActive) handler.postDelayed({ startListening() }, RETRY_DELAY_MS)
             }
         }
+    }
+
+    // ── Фоновый сервис ─────────────────────────────────────────────────────
+
+    private fun startBackgroundService() {
+        if (!isJARVISActive) return   // Запускаем только если JARVIS был активен
+        try {
+            val intent = Intent(this, JARVISBackgroundService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } catch (e: Exception) {
+            // Игнорируем — сервис необязателен
+        }
+    }
+
+    private fun stopBackgroundService() {
+        try {
+            stopService(Intent(this, JARVISBackgroundService::class.java))
+        } catch (e: Exception) {}
     }
 
     // ── UI ─────────────────────────────────────────────────────────────────
@@ -327,9 +349,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Toast.makeText(this@MainActivity, "Скоро будет доступно", Toast.LENGTH_SHORT).show()
             }
         }
-        viewModel.isListening.observe(this) { updateListeningUI(it) }
-        viewModel.currentCommand.observe(this) { binding.tvCurrentCommand.text = it }
-        viewModel.jarvisStatus.observe(this) { binding.tvStatus.text = it }
+        viewModel.isListening.observe(this)     { updateListeningUI(it) }
+        viewModel.currentCommand.observe(this)  { binding.tvCurrentCommand.text = it }
+        viewModel.jarvisStatus.observe(this)    { binding.tvStatus.text = it }
     }
 
     private fun updateListeningUI(listening: Boolean) {
@@ -345,13 +367,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 PackageManager.PERMISSION_GRANTED
 
     private fun requestPermissions() {
-        val permissions = arrayOf(
+        val permissions = mutableListOf(
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CAMERA,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.SEND_SMS,
             Manifest.permission.READ_CONTACTS
         )
+        // POST_NOTIFICATIONS нужен для Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
         val toRequest = permissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }.toTypedArray()
@@ -374,12 +400,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onResume() {
         super.onResume()
+        // Останавливаем фоновый сервис — сами слушаем
+        stopBackgroundService()
         if (isJARVISActive && !isListening && !isSpeaking) startListening()
     }
 
     override fun onPause() {
         super.onPause()
         stopListening()
+        // Запускаем фоновый сервис чтобы продолжал слушать в других приложениях
+        startBackgroundService()
     }
 
     override fun onDestroy() {
