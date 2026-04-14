@@ -2,44 +2,67 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Сеть -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Микрофон и аудио -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Система -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Камера и хранилище -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Локация -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Фонарик -->
     <uses-permission android:name="android.permission.FLASHLIGHT" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Звонки и SMS -->
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
+
+    <!-- Биометрия -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <!-- Foreground Service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <!--
-        ВАЖНО: Блок <queries> нужен для Android 11+ (API 30+).
+        POST_NOTIFICATIONS — обязателен для Android 13+ (API 33+).
+        Без него уведомления (фолбэк запуска приложений из фона) не показываются.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+        <queries> — обязателен для Android 11+ (API 30+).
         Без него queryIntentActivities() возвращает пустой список
-        и openApp() не находит установленные приложения.
+        и команда "открой <приложение>" не работает.
     -->
     <queries>
-        <!-- Разрешаем видеть все лаунчер-приложения (для команды "открой <приложение>") -->
+        <!-- Все лаунчер-приложения (для "открой ...") -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
-        <!-- Разрешаем открывать URL в браузере -->
+        <!-- Открытие URL -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
@@ -48,15 +71,15 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
-        <!-- Разрешаем поиск в браузере -->
+        <!-- Веб-поиск -->
         <intent>
             <action android:name="android.intent.action.WEB_SEARCH" />
         </intent>
-        <!-- Разрешаем поиск в YouTube -->
+        <!-- Поиск в приложениях (YouTube) -->
         <intent>
             <action android:name="android.intent.action.SEARCH" />
         </intent>
-        <!-- Явные пакеты для быстрого открытия по имени -->
+        <!-- Явные пакеты -->
         <package android:name="com.google.android.youtube" />
         <package android:name="com.whatsapp" />
         <package android:name="org.telegram.messenger" />
