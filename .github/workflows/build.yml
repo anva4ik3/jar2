@@ -44,7 +44,7 @@ jobs:
               def chunk(name, data):
                   c = zlib.crc32(name + data) & 0xffffffff
                   return struct.pack('>I', len(data)) + name + data + struct.pack('>I', c)
-              raw = b''.join(b'\x00' + bytes([100, 149, 237, 255] * size) for _ in range(size))
+              raw = b''.join(b'\x00' + bytes([100, 149, 237] * size) for _ in range(size))
               png = b'\x89PNG\r\n\x1a\n'
               png += chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
               png += chunk(b'IDAT', zlib.compress(raw))
@@ -117,7 +117,7 @@ jobs:
               def chunk(name, data):
                   c = zlib.crc32(name + data) & 0xffffffff
                   return struct.pack('>I', len(data)) + name + data + struct.pack('>I', c)
-              raw = b''.join(b'\x00' + bytes([100, 149, 237, 255] * size) for _ in range(size))
+              raw = b''.join(b'\x00' + bytes([100, 149, 237] * size) for _ in range(size))
               png = b'\x89PNG\r\n\x1a\n'
               png += chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
               png += chunk(b'IDAT', zlib.compress(raw))
