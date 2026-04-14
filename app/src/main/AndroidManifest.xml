@@ -28,6 +28,53 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
+    <!--
+        ВАЖНО: Блок <queries> нужен для Android 11+ (API 30+).
+        Без него queryIntentActivities() возвращает пустой список
+        и openApp() не находит установленные приложения.
+    -->
+    <queries>
+        <!-- Разрешаем видеть все лаунчер-приложения (для команды "открой <приложение>") -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <!-- Разрешаем открывать URL в браузере -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <!-- Разрешаем поиск в браузере -->
+        <intent>
+            <action android:name="android.intent.action.WEB_SEARCH" />
+        </intent>
+        <!-- Разрешаем поиск в YouTube -->
+        <intent>
+            <action android:name="android.intent.action.SEARCH" />
+        </intent>
+        <!-- Явные пакеты для быстрого открытия по имени -->
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.whatsapp" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.google.android.googlequicksearchbox" />
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.vkontakte.android" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.google.android.dialer" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.google.android.apps.nbu.files" />
+        <package android:name="com.google.android.music" />
+        <package android:name="com.google.android.calculator" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
