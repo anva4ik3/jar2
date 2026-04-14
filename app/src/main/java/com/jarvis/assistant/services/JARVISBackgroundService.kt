@@ -277,7 +277,7 @@ class JARVISBackgroundService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("JARVIS")
             .setContentText(text)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_jarvis)
             .setContentIntent(pendingIntent)
             .build()
     }
