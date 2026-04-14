@@ -1,0 +1,173 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  # ─── DEBUG BUILD (на каждый push/PR) ───────────────────────────────────────
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+  # ─── RELEASE BUILD + GITHUB RELEASE + TELEGRAM (только push в main/master) ─
+  build-release:
+    name: Build & Publish Release APK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
+
+      - name: Build Release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
+            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD \
+            --stacktrace
+
+      # ── Получаем версию из build.gradle ──────────────────────────────────────
+      - name: Get version name
+        id: version
+        run: |
+          VERSION=$(grep "versionName" app/build.gradle | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          BUILD=$(grep "versionCode" app/build.gradle | head -1 | grep -o '[0-9]*')
+          echo "name=$VERSION" >> $GITHUB_OUTPUT
+          echo "code=$BUILD" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION-$BUILD" >> $GITHUB_OUTPUT
+
+      # ── GitHub Release ────────────────────────────────────────────────────────
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "JARVIS Assistant ${{ steps.version.outputs.name }} (build ${{ steps.version.outputs.code }})"
+          body: |
+            ## 🤖 JARVIS Assistant ${{ steps.version.outputs.name }}
+
+            **Build:** `${{ steps.version.outputs.code }}`
+            **Commit:** `${{ github.sha }}`
+            **Branch:** `${{ github.ref_name }}`
+
+            ### Изменения
+            ${{ github.event.head_commit.message }}
+
+            ---
+            📥 Скачай APK ниже и установи на Android.
+          files: app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Отправка APK файлом в Telegram ───────────────────────────────────────
+      - name: Send APK to Telegram
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          RELEASE_URL="${{ steps.create_release.outputs.url }}"
+          VERSION="${{ steps.version.outputs.name }}"
+          BUILD="${{ steps.version.outputs.code }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+
+          CAPTION="🤖 *JARVIS Assistant v${VERSION}* \(build ${BUILD}\)
+
+📝 ${COMMIT_MSG}
+🔖 Commit: \`${SHORT_SHA}\`
+🔗 [GitHub Release](${RELEASE_URL})
+
+✅ Сборка успешна\!"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
+            -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -F "document=@${APK_PATH}" \
+            -F "caption=${CAPTION}" \
+            -F "parse_mode=MarkdownV2"
+
+      # ── Уведомление об ошибке в Telegram ─────────────────────────────────────
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          LOGS_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "text=❌ *Сборка упала\!*%0A%0AПроект: JARVIS Assistant%0AКоммит: \`${SHORT_SHA}\`%0A%0A[Посмотреть логи](${LOGS_URL})" \
+            -d "parse_mode=MarkdownV2"
