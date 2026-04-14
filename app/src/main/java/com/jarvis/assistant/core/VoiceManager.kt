@@ -1,6 +1,8 @@
 package com.jarvis.assistant.core
 
 import android.content.Context
+import android.content.Intent
+import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -106,7 +108,7 @@ class VoiceManager(private val context: Context) {
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
-            
+
             try {
                 speechRecognizer.startListening(intent)
                 Logger.d("Voice manager started listening")
@@ -171,4 +173,4 @@ class VoiceManager(private val context: Context) {
         textToSpeech.shutdown()
         Logger.d("Voice manager shutdown")
     }
-} 
+}
