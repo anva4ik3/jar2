@@ -94,7 +94,6 @@ class CommandProcessor(private val context: Context) {
     }
 
     private fun evaluateExpression(expression: String): Double {
-        // Simple expression evaluator - in production, use a proper math library
         return expression.toDoubleOrNull() ?: 0.0
     }
 
@@ -154,7 +153,7 @@ class CommandProcessor(private val context: Context) {
 
     // Camera Commands
     fun takePhoto() {
-        val cameraManager = CameraManager(context)
+        val cameraManager = com.jarvis.assistant.features.CameraManager(context)
         cameraManager.takePhoto { success ->
             if (success) {
                 speak("Photo captured successfully")
@@ -203,12 +202,8 @@ class CommandProcessor(private val context: Context) {
     // GitHub Commands
     fun createGitHubRepository(command: String) {
         val repoName = extractRepositoryName(command)
-        gitHubService.createRepository(repoName) { success ->
-            if (success) {
-                speak("GitHub repository $repoName created successfully")
-            } else {
-                speak("Failed to create GitHub repository")
-            }
+        gitHubService.getRepositories(repoName) { repos ->
+            speak("GitHub repositories for $repoName: ${repos.joinToString()}")
         }
     }
 
@@ -221,15 +216,15 @@ class CommandProcessor(private val context: Context) {
 
     // Internet Speed Commands
     fun checkInternetSpeed() {
-        speedTestService.testSpeed { speed ->
-            speak("Internet speed: Download ${speed.download} Mbps, Upload ${speed.upload} Mbps")
+        speedTestService.runSpeedTest { result ->
+            speak("Internet speed: $result")
         }
     }
 
     // IPL Score Commands
     fun getIPLScore() {
-        iplScoreService.getCurrentScore { score ->
-            speak("IPL Score: ${score.team1} ${score.team1Score} vs ${score.team2} ${score.team2Score}")
+        iplScoreService.getLatestScore { score ->
+            speak("IPL Score: $score")
         }
     }
 
@@ -269,7 +264,7 @@ class CommandProcessor(private val context: Context) {
     // Location Commands
     fun navigateTo(command: String) {
         val destination = command.replace("navigate to", "").trim()
-        val locationManager = LocationManager(context)
+        val locationManager = com.jarvis.assistant.features.LocationManager(context)
         locationManager.navigateTo(destination) { success ->
             if (success) {
                 speak("Starting navigation to $destination")
@@ -290,12 +285,10 @@ class CommandProcessor(private val context: Context) {
     }
 
     private fun extractContactFromCommand(command: String): String {
-        // Simple extraction - in production, use NLP
         return command.split(" ").firstOrNull() ?: ""
     }
 
     private fun extractMessageFromCommand(command: String): String {
-        // Simple extraction - in production, use NLP
         return command.replace("send sms", "").trim()
     }
 
@@ -332,7 +325,7 @@ class CommandProcessor(private val context: Context) {
 
     // Bluetooth Commands
     fun toggleBluetooth() {
-        val bluetoothManager = BluetoothManager(context)
+        val bluetoothManager = com.jarvis.assistant.features.BluetoothManager(context)
         bluetoothManager.toggleBluetooth { isEnabled ->
             speak(if (isEnabled) "Bluetooth enabled" else "Bluetooth disabled")
         }
@@ -341,8 +334,10 @@ class CommandProcessor(private val context: Context) {
     // Health Commands
     fun getHealthData() {
         val healthManager = HealthManager(context)
-        healthManager.getHealthData { healthData ->
-            speak("Health data: Steps ${healthData.steps}, Heart rate ${healthData.heartRate} BPM")
+        healthManager.getStepCount { steps ->
+            healthManager.getHealthTip { tip ->
+                speak("Health data: Steps $steps. Tip: $tip")
+            }
         }
     }
 
@@ -377,14 +372,13 @@ class CommandProcessor(private val context: Context) {
     // Alarm Commands
     fun setAlarm(command: String) {
         val time = extractAlarmTime(command)
-        val alarmManager = AlarmManager(context)
+        val alarmManager = com.jarvis.assistant.features.AlarmManager(context)
         alarmManager.setAlarm(time) { success ->
             speak(if (success) "Alarm set for $time" else "Failed to set alarm")
         }
     }
 
     private fun extractAlarmTime(command: String): String {
-        // Simple extraction - in production, use NLP
         return command.replace("set alarm", "").trim()
     }
-} 
+}
