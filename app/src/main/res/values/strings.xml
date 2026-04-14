@@ -157,7 +157,6 @@
     <string name="smart_home_title">Smart Home</string>
     <string name="discover_devices">Discover Devices</string>
     <string name="device_list">Device List</string>
-    <string name="device_control">Device Control</string>
     <string name="turn_on_device">Turn on %1$s</string>
     <string name="turn_off_device">Turn off %1$s</string>
     <string name="set_temperature">Set temperature to %1$s°C</string>
@@ -258,14 +257,12 @@
     <string name="calculator_title">Calculator</string>
     <string name="calculation">Calculation</string>
     <string name="math_expression">Mathematical Expression</string>
-    <string name="calculation_result">Calculation Result</string>
     
     <!-- Translation -->
     <string name="translation_title">Translation</string>
     <string name="translate_text">Translate Text</string>
     <string name="source_language">Source Language</string>
     <string name="target_language">Target Language</string>
-    <string name="translation_result">Translation Result</string>
     
     <!-- Focus Mode -->
     <string name="focus_mode_title">Focus Mode</string>
@@ -273,7 +270,6 @@
     <string name="end_focus_session">End Focus Session</string>
     <string name="focus_break">Focus Break</string>
     <string name="focus_statistics">Focus Statistics</string>
-    <string name="focus_duration">Focus Duration</string>
     <string name="focus_sessions_count">Focus Sessions Count</string>
     <string name="focus_productivity">Focus Productivity</string>
     
