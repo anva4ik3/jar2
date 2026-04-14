@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
             btnSettings.setOnClickListener {
-                Toast.makeText(this@MainActivity, "Settings coming soon", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
             }
 
             btnAnalytics.setOnClickListener {
