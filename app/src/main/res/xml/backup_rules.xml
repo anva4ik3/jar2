@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <include domain="sharedpref" path="."/>
-    <exclude domain="sharedpref" path="sensitive_data.xml"/>
+    <exclude domain="sharedpref" path="sensitive_d>
     <include domain="database" path="."/>
     <include domain="file" path="voice_profiles/"/>
     <include domain="file" path="config/"/>
-    <exclude domain="file" path="temp/"/>
-</full-backup-content> 
+</full-backup-content>
