@@ -259,7 +259,7 @@ class CommandProcessor(private val context: Context) {
     }
 
     fun playMusic() {
-        MusicManager(context).playMusic { success ->
+        MusicManager(context).playMusic("") { success ->
             speak(if (success) "Playing music" else "Failed to play music")
         }
     }
