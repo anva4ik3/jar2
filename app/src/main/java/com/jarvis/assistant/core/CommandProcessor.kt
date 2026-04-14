@@ -29,29 +29,24 @@ import com.jarvis.assistant.services.IPLScoreService
 import com.jarvis.assistant.services.NewsService
 import com.jarvis.assistant.services.SpeedTestService
 import com.jarvis.assistant.services.WeatherService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
 
 class CommandProcessor(private val context: Context) {
 
     private lateinit var textToSpeech: TextToSpeech
     private lateinit var audioManager: AudioManager
-    private lateinit var weatherService: WeatherService
-    private lateinit var newsService: NewsService
-    private lateinit var gitHubService: GitHubService
-    private lateinit var speedTestService: SpeedTestService
-    private lateinit var iplScoreService: IPLScoreService
+    private val weatherService = WeatherService()
+    private val newsService = NewsService()
+    private val gitHubService = GitHubService()
+    private val speedTestService = SpeedTestService()
+    private val iplScoreService = IPLScoreService()
+    private val scope = CoroutineScope(Dispatchers.Main)
 
     init {
-        initializeServices()
-    }
-
-    private fun initializeServices() {
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        weatherService = WeatherService()
-        newsService = NewsService()
-        gitHubService = GitHubService()
-        speedTestService = SpeedTestService()
-        iplScoreService = IPLScoreService()
     }
 
     fun speak(text: String) {
@@ -59,14 +54,12 @@ class CommandProcessor(private val context: Context) {
     }
 
     fun getWeather(command: String) {
-        val location = extractLocationFromCommand(command)
-        weatherService.getWeather(location) { weatherInfo ->
-            speak("Weather in $location: ${weatherInfo.description}, Temperature: ${weatherInfo.temperature}°C")
+        val location = command.replace("weather", "").replace("in", "").trim()
+        scope.launch {
+            weatherService.getWeather(location) { weatherInfo ->
+                speak("Weather in $location: ${weatherInfo.description}, Temperature: ${weatherInfo.temperature}°C")
+            }
         }
-    }
-
-    private fun extractLocationFromCommand(command: String): String {
-        return command.replace("weather", "").replace("in", "").trim()
     }
 
     fun searchGoogle(command: String) {
@@ -96,12 +89,8 @@ class CommandProcessor(private val context: Context) {
 
     fun calculate(command: String) {
         val expression = command.replace("calculate", "").trim()
-        try {
-            val result = expression.toDoubleOrNull() ?: 0.0
-            speak("The result is $result")
-        } catch (e: Exception) {
-            speak("Sorry, I couldn't calculate that expression")
-        }
+        val result = expression.toDoubleOrNull() ?: 0.0
+        speak("The result is $result")
     }
 
     fun enterFocusMode() {
